@@ -55,8 +55,10 @@ jobs:
         if: success()
         with:
           host: server326.web-hosting.com
-          port: 21098  # Use the SFTP port for SSH connection
+          port: 21098 
           username: ${{ secrets.SSH_USERNAME }}
-          password: ${{ secrets.SSH_PASSWORD }}
+          password: ${{ secrets.SSH_PASSWORD }} 
           script: |
             cd /home/gvelkjyo/public_html/scraping/
+            source venv/bin/activate
+            pip install -r requirements.txt
