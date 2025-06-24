@@ -1,0 +1,40 @@
+name: Scrape Volusia County Inmates
+
+on:
+  schedule:
+    - cron: "0 0,4,9,13,18,22 * * *" # Every 4.5 hours (00:00, 04:30, 09:00, 13:30, 18:00, 22:30 UTC)
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright beautifulsoup4
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Install Playwright browsers
+        run: |
+          python -m playwright install
+          python -m playwright install-deps
+
+      - name: Run scraper
+        run: python volusia.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          git add volusia_inmates.db
+          git commit -m "Update inmate database [skip ci]" || echo "No changes to commit"
+          git push || echo "No changes to push"
