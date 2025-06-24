@@ -46,23 +46,17 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./
-          server-dir: /public_html/scraping
+          server-dir: /public_html/scraping/
           protocol: sftp
-
+          port: 21098 
+      
       - name: Restart Flask service
         uses: appleboy/ssh-action@master
         if: success()
         with:
-          host: server326.web-hosting.com  # Use the same server as FTP or your specific SSH hostname
+          host: server326.web-hosting.com
+          port: 21098  # Use the SFTP port for SSH connection
           username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          # or password: ${{ secrets.SSH_PASSWORD }}
+          password: ${{ secrets.SSH_PASSWORD }}
           script: |
             cd /home/gvelkjyo/public_html/scraping/
-            # For shared hosting environments:
-            touch tmp/restart.txt  # For Passenger-based hosts
-            # Or use your host's specific command to restart applications
-            # Or, if you're using CGI/FastCGI:
-            killall -9 python  # Be careful with this! Only if you know what you're doing
-            # Then start your app in the background:
-            nohup python app.py > flask.log 2>&1 &
