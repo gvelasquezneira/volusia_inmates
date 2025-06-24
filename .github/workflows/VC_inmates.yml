@@ -55,7 +55,7 @@ jobs:
         if: success()
         with:
           host: server326.web-hosting.com
-          port: 21098
+          port: 21098  # Corrected to match the SFTP port provided
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
@@ -93,36 +93,37 @@ jobs:
             fi
             
             # Create a more robust passenger_wsgi.py file
-            cat > passenger_wsgi.py << 'EOL'
-      import sys, os
-      
-      # More robust virtual environment detection
-      VENV_PATH = os.path.join(os.getcwd(), 'venv', 'bin', 'python3')
-      SYSTEM_PYTHON = '/opt/alt/python311/bin/python3'
-      
-      # Only attempt to use the virtual environment if it exists
-      if os.path.exists(VENV_PATH) and sys.executable != VENV_PATH:
-          try:
-              os.execl(VENV_PATH, VENV_PATH, *sys.argv)
-          except:
-              # Fall back to system Python if virtual env fails
-              pass
-      
-      # Add current directory to path
-      sys.path.insert(0, os.getcwd())
-      
-      try:
-          # Try to import from inmates_app.py
-          from inmates_app import application
-      except ImportError:
-          # Fallback if import fails
-          from flask import Flask
-          application = Flask(__name__)
-          
-          @application.route('/')
-          def index():
-              return "Error: Could not load the main application. Please check server logs."
-      EOL
+            cat > passenger_wsgi.py << 'EOF'
+            import sys, os
+            
+            # More robust virtual environment detection
+            VENV_PATH = os.path.join(os.getcwd(), 'venv', 'bin', 'python3')
+            SYSTEM_PYTHON = '/opt/alt/python311/bin/python3'
+            
+            # Only attempt to use the virtual environment if it exists
+            if os.path.exists(VENV_PATH) and sys.executable != VENV_PATH:
+                try:
+                    os.execl(VENV_PATH, VENV_PATH, *sys.argv)
+                except:
+                    # Fall back to system Python if virtual env fails
+                    pass
+            
+            # Add current directory to path
+            sys.path.insert(0, os.getcwd())
+            
+            try:
+                # Try to import from inmates_app.py
+                from inmates_app import application
+            except ImportError:
+                # Fallback if import fails
+                from flask import Flask
+                application = Flask(__name__)
+                
+                @application.route('/')
+                def index():
+                    return "Error: Could not load the main application. Please check server logs."
+            EOF
+            
             echo "Created robust passenger_wsgi.py file"
             
             # Make sure the database file is in the right location
