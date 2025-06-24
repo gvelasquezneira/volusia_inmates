@@ -55,9 +55,9 @@ jobs:
         if: success()
         with:
           host: server326.web-hosting.com
-          port: 21098 
+          port: 21098
           username: ${{ secrets.SSH_USERNAME }}
-          password: ${{ secrets.SSH_PASSWORD }} 
+          password: ${{ secrets.SSH_PASSWORD }}
           script: |
             cd /home/gvelkjyo/public_html/scraping/
             source venv/bin/activate
