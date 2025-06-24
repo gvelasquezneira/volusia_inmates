@@ -1,4 +1,4 @@
-name: Scrape Volusia County Inmates
+name: Scrape and Deploy Volusia County Inmates
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch: # Allows manual trigger
 
 jobs:
-  scrape:
+  scrape-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -38,3 +38,24 @@ jobs:
           git add volusia_inmates.db
           git commit -m "Update inmate database [skip ci]" || echo "No changes to commit"
           git push || echo "No changes to push"
+
+      - name: Deploy to server
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: your-ftp-server.namecheap.com
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./  # Uploads all files, including volusia_inmates.db
+          server-dir: /public_html/  # Adjust to your server's public directory
+
+      - name: Restart Flask service
+        uses: appleboy/ssh-action@master
+        with:
+          host: your-server-ip
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /path/to/your/app
+            source venv/bin/activate
+            pip install -r requirements.txt
+            sudo systemctl restart your-flask-service
