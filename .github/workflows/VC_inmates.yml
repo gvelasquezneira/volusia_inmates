@@ -42,7 +42,7 @@ jobs:
       - name: Deploy to server
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: your-ftp-server.namecheap.com
+          server: gvelasquezneira.press
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./  # Uploads all files, including volusia_inmates.db
