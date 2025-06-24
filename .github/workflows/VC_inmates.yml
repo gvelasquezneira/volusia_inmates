@@ -51,13 +51,18 @@ jobs:
 
       - name: Restart Flask service
         uses: appleboy/ssh-action@master
-        if: success()  # Run only if FTP succeeds
+        if: success()
         with:
-          host: gvelasquezneira.press  
+          host: server326.web-hosting.com  # Use the same server as FTP or your specific SSH hostname
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # or password: ${{ secrets.SSH_PASSWORD }}
           script: |
             cd /home/gvelkjyo/public_html/scraping/
-            source venv/bin/activate
-            pip install -r requirements.txt
-            sudo systemctl restart flask-app  # Replace with your service name
+            # For shared hosting environments:
+            touch tmp/restart.txt  # For Passenger-based hosts
+            # Or use your host's specific command to restart applications
+            # Or, if you're using CGI/FastCGI:
+            killall -9 python  # Be careful with this! Only if you know what you're doing
+            # Then start your app in the background:
+            nohup python app.py > flask.log 2>&1 &
