@@ -47,7 +47,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./
           server-dir: /public_html/scraping
-          protocol: ftp
+          protocol: sftp
 
       - name: Restart Flask service
         uses: appleboy/ssh-action@master
