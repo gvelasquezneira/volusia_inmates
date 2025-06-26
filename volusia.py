@@ -42,13 +42,11 @@ async def main():
 
         # Navigate to the disclaimer page
         disclaimer_url = "https://volusiamug.vcgov.org/Disclaimer.aspx"
-        print("Navigating to disclaimer page...")
         await page.goto(disclaimer_url, wait_until="networkidle")
 
         # Click the "Accept" button
         accept_button = page.locator('input[name="ButtonAccept"]')
         await accept_button.click()
-        print("Clicked 'Accept' button")
         await page.wait_for_load_state("networkidle")
 
         # Save HTML for debugging
@@ -59,14 +57,12 @@ async def main():
         # Click the "Recent Bookings" button
         recent_button = page.locator('input[name="btnRecentBookings"]')
         await recent_button.click()
-        print("Clicked 'Recent Bookings' button")
         await page.wait_for_load_state("networkidle")
 
         # Save the results page HTML for debugging
         results_html = await page.content()
         with open("results_page.html", "w", encoding="utf-8") as f:
             f.write(results_html)
-        print("Saved results page HTML for debugging")
 
         # Base URL for relative links
         base_url = "https://volusiamug.vcgov.org/"
@@ -77,12 +73,10 @@ async def main():
         # Try different ways to find the table
         inmates_table = None
         all_tables = results_soup.find_all('table')
-        print(f"Found {len(all_tables)} tables on the page")
 
         for i, table in enumerate(all_tables):
             if table.get('id') == 'Grid':
                 inmates_table = table
-                print(f"Found inmates table at index {i}")
                 break
 
         if inmates_table is None:
@@ -100,23 +94,19 @@ async def main():
 
         if inmates_table:
             # Extract rows (skip the header row)
-            rows = inmates_table.find_all('tr')[1:]  # Skip header row
-            print(f"Found {len(rows)} inmate rows in the table")
+            rows = inmates_table.find_all('tr')[1:]
 
             # Process each inmate row
             for row_index, row in enumerate(rows):
                 cells = row.find_all('td')
                 if len(cells) <= 1:
-                    print(f"Skipping row {row_index} (likely pagination)")
                     continue
 
-                if len(cells) >= 12:  # Ensure we have all the expected columns
-                    # Extract inmate data
+                if len(cells) >= 12:  
                     booking_link = cells[0].find('a')
                     booking_num = booking_link.text.strip() if booking_link else ""
                     detail_url = booking_link['href'] if booking_link else ""
 
-                    # Extract image URL if present
                     img_tag = cells[1].find('img')
                     photo_url = base_url + img_tag['src'] if img_tag else ""
 
@@ -131,19 +121,14 @@ async def main():
                     release_date = cells[10].text.strip()
                     in_custody = cells[11].text.strip()
 
-                    print(f"Processing inmate {row_index}: {first_name} {last_name} (Booking #{booking_num})")
-
-                    # Initialize list to store charges
                     charges_list = []
 
-                    # Visit the detail page to get charges
                     if detail_url:
-                        await asyncio.sleep(1.5)  # Delay to avoid overwhelming the server
+                        await asyncio.sleep(1.5)  
                         await page.goto(base_url + detail_url, wait_until="networkidle")
                         detail_html = await page.content()
                         detail_soup = BeautifulSoup(detail_html, 'html.parser')
 
-                        # Find the charges table
                         charges_table = None
                         all_detail_tables = detail_soup.find_all('table')
 
@@ -186,10 +171,6 @@ async def main():
                                         'other_description': charge_cells[11].text.strip() if len(charge_cells) > 11 else ""
                                     }
                                     charges_list.append(charge)
-
-                            print(f"Processed {charge_count} charges for inmate {booking_num}")
-                        else:
-                            print(f"No charges table found for inmate {booking_num}")
 
                     # Combine inmate data with charges (as JSON string)
                     row_data = (
