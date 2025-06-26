@@ -106,5 +106,6 @@ def index():
                               heading='Internal Server Error',
                               error_message='An unexpected error occurred. Please try again later.')
 
+
 if __name__ == '__main__':
     app.run(debug=False)
