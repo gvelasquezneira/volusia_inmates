@@ -13,7 +13,7 @@ application = app
 app.logger.setLevel(logging.DEBUG)
 
 # Configure database
-db_path = os.path.abspath('volusia_inmates.db')
+db_path = os.path.abspath('volusia_mugshots.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = True  # Log SQL queries for debugging
@@ -51,8 +51,8 @@ class Inmate(db.Model):
 def index():
     try:
         # Verify database file exists
-        if not os.path.exists('volusia_inmates.db'):
-            app.logger.error("Database file volusia_inmates.db not found")
+        if not os.path.exists('volusia_mugshots.db'):
+            app.logger.error("Database file volusia_mugshots.db not found")
             return render_template('error.html', 
                                   heading='Database Not Found',
                                   error_message='The database file is missing. Please run the scraper (volusia.py).')
