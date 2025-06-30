@@ -7,8 +7,6 @@ import time
 import os
 
 async def main():
-    # Initialize SQLite database
-    print("Initializing SQLite database: volusia_mugshots.db")
     conn = sqlite3.connect('volusia_mugshots.db')
     cursor = conn.cursor()
 
@@ -32,11 +30,9 @@ async def main():
         )
     ''')
 
-
     conn.commit()
 
     async with async_playwright() as p:
-        print("Launching Playwright Chromium browser")
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(
             user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36'
@@ -51,18 +47,23 @@ async def main():
             await browser.close()
             return
 
+        # Click the "Accept" button
         accept_button = page.locator('input[name="ButtonAccept"]')
         try:
             if await accept_button.count() == 0:
                 raise Exception("Accept button not found")
             await accept_button.click()
             await page.wait_for_load_state("networkidle")
-            print("Successfully clicked 'Accept' button")
         except Exception as e:
-            print(f"Error clicking Accept button: {e}")
             await browser.close()
             return
 
+        # Save HTML for debugging
+        disclaimer_html = await page.content()
+        with open("disclaimer_page.html", "w", encoding="utf-8") as f:
+            f.write(disclaimer_html)
+
+        # Click the "Recent Bookings" button
         recent_button = page.locator('input[name="btnRecentBookings"]')
         try:
             if await recent_button.count() == 0:
@@ -77,6 +78,7 @@ async def main():
         page_num = 1
 
         while True:
+            # Save the results page HTML for debugging
             results_html = await page.content()
             with open(f"results_page_{page_num}.html", "w", encoding="utf-8") as f:
                 f.write(results_html)
@@ -102,15 +104,17 @@ async def main():
                             headers_text = [cell.get_text().strip() for cell in cells]
                             if "Booking #" in headers_text or "Inmate ID" in headers_text:
                                 inmates_table = table
-                                break
+                            
 
             if inmates_table:
                 # Extract rows (skip the header row)
                 rows = inmates_table.find_all('tr')[1:]
+             
 
                 # Process each inmate row
                 for row_index, row in enumerate(rows):
                     cells = row.find_all('td')
+                    
                     if len(cells) <= 1:
                         continue
 
@@ -118,10 +122,11 @@ async def main():
                         booking_link = cells[0].find('a')
                         booking_num = booking_link.text.strip() if booking_link else ""
                         detail_url = booking_link['href'] if booking_link else ""
+                       
 
                         img_tag = cells[1].find('img')
                         photo_url = base_url + img_tag['src'] if img_tag else ""
-
+                    
                         inmate_id = cells[2].text.strip()
                         last_name = cells[3].text.strip()
                         first_name = cells[4].text.strip()
@@ -132,6 +137,7 @@ async def main():
                         booking_date = cells[9].text.strip()
                         release_date = cells[10].text.strip()
                         in_custody = cells[11].text.strip()
+                        
 
                         charges_list = []
 
@@ -164,7 +170,7 @@ async def main():
                                         charges_table = first_table
 
                             if charges_table:
-                                charge_rows = charges_table.find_all('tr')[1:]
+                                charge_rows = charges_table.find_all('tr')[1:]  # Skip header row
                                 charge_count = 0
 
                                 for charge_row in charge_rows:
@@ -189,17 +195,15 @@ async def main():
                                     }
                                     charges_list.append(charge)
 
-                            else:
-
-                        else:
-
                         # Combine inmate data with charges (as JSON string)
                         row_data = (
                             booking_num, inmate_id, last_name, first_name, middle_name,
                             suffix, sex, race, booking_date, release_date, in_custody,
                             photo_url, json.dumps(charges_list)
                         )
+                      
 
+                        # Insert data into database
                         try:
                             cursor.execute('''
                                 INSERT OR REPLACE INTO inmates (
@@ -209,24 +213,23 @@ async def main():
                                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                             ''', row_data)
                             conn.commit()
+                          
                         except sqlite3.Error as e:
+                            print(f"Error inserting inmate {booking_num}: {e}")
 
-                    else:
-
-            else:
-                break
-
-
+            # Check for pagination "Next" button
             next_button = page.locator('input[value="Next"]')
             if await next_button.count() > 0 and await next_button.is_enabled():
                 await next_button.click()
                 await page.wait_for_load_state("networkidle")
                 page_num += 1
             else:
+                print(f"No 'Next' button found or disabled on page {page_num}. Stopping pagination.")
                 break
 
         conn.close()
         await browser.close()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
