@@ -35,7 +35,7 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
-          git add volusia_inmates.db
+          git add volusia_mugshots.db
           git commit -m "Update inmate database [skip ci]" || echo "No changes to commit"
           git push https://x:${{ secrets.PAT }}@github.com/gvelasquezneira/volusia_inmates.git || echo "No changes to push"
 
@@ -127,7 +127,7 @@ jobs:
             echo "Created robust passenger_wsgi.py file"
             
             # Make sure the database file is in the right location
-            if [ -f "volusia_inmates.db" ]; then
+            if [ -f "volusia_mugshots.db" ]; then
               echo "Database file exists"
             else
               echo "WARNING: Database file not found in the current directory"
